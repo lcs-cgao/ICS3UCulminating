@@ -27,21 +27,33 @@ class GomokuGame {
     
     // MARK: - Stored properties
     
+    /// The size of the grid (15x15). Using a smaller board makes games faster.
     let boardSize: Int = 15
+    
+    /// The 2D array representing the board. 
+    /// 'nil' means the intersection is empty.
+    /// 'Player' means a stone is placed there.
     var board: [[Player?]]
+    
+    /// Tracks whose turn it is. Black always starts in Gomoku.
     var currentPlayer: Player = .black
+    
+    /// Tracks the current state of the game (playing, won, or draw).
     var gameState: GameState = .playing
+    
+    /// Stores the last move made, which helps in efficient win checking.
     var lastMove: (row: Int, col: Int)?
     
     // MARK: - Initializer
     
     init() {
-        // Initialize a 15x15 board filled with nil (empty)
+        // We create the board by nested loops.
+        // This is like drawing 15 rows, and in each row, drawing 15 empty spots.
         var initialBoard: [[Player?]] = []
         for _ in 0..<boardSize {
             var row: [Player?] = []
             for _ in 0..<boardSize {
-                row.append(nil)
+                row.append(nil) // Start with all spots empty
             }
             initialBoard.append(row)
         }
@@ -50,45 +62,45 @@ class GomokuGame {
     
     // MARK: - Functions
     
-    /// Attempts to place a stone at the specified coordinate.
-    /// - Parameters:
-    ///   - row: The row index (0-14)
-    ///   - col: The column index (0-14)
-    /// - Returns: Bool indicating if the move was successful
+    /// The main logic for making a move.
+    /// It validates the move, updates the board, and checks if someone won.
     func placeStone(row: Int, col: Int) -> Bool {
-        // 1. Validation: Is the game still active?
+        // Safety Check 1: Don't allow moves if the game is already over.
         if gameState != .playing {
             return false
         }
         
-        // 2. Validation: Is the move within bounds?
+        // Safety Check 2: Ensure the click was actually inside the 15x15 grid.
         if row < 0 || row >= boardSize || col < 0 || col >= boardSize {
             return false
         }
         
-        // 3. Validation: Is the cell empty?
+        // Safety Check 3: Only allow placing a stone on an empty (nil) spot.
         if board[row][col] != nil {
             return false
         }
         
-        // 4. Update the board
+        // --- ACTION PHASE ---
+        // Place the current player's stone on the board.
         board[row][col] = currentPlayer
         lastMove = (row, col)
         
-        // 5. Check for win or draw
+        // --- CHECK PHASE ---
+        // After placing a stone, we check if this move won the game.
         if checkWin(at: row, col: col) {
             gameState = .won(currentPlayer)
         } else if isBoardFull() {
+            // If no one won but the board is full, it's a draw.
             gameState = .draw
         } else {
-            // 6. Switch players if game continues
+            // If the game continues, swap to the other player.
             currentPlayer = currentPlayer.opponent()
         }
         
         return true
     }
     
-    /// Resets the game to the initial state.
+    /// Resets everything to start a brand new game.
     func resetGame() {
         var newBoard: [[Player?]] = []
         for _ in 0..<boardSize {
@@ -104,29 +116,33 @@ class GomokuGame {
         self.lastMove = nil
     }
     
-    // MARK: - Private Logic
+    // MARK: - Private Logic (The "Brain" of the game)
     
+    /// This function checks 4 axes around the stone just placed:
+    /// Horizontal, Vertical, and the two Diagonals.
     private func checkWin(at row: Int, col: Int) -> Bool {
         let player = board[row][col]
         
-        // Directions: (row delta, col delta)
+        // These numbers represent the 'steps' we take to move in a direction.
+        // e.g., (0, 1) means stay in the same row, move 1 column right.
         let directions: [(dr: Int, dc: Int)] = [
-            (0, 1),  // Horizontal
-            (1, 0),  // Vertical
-            (1, 1),  // Diagonal (top-left to bottom-right)
-            (1, -1)  // Diagonal (top-right to bottom-left)
+            (0, 1),  // Horizontal axis
+            (1, 0),  // Vertical axis
+            (1, 1),  // Diagonal axis (\)
+            (1, -1)  // Anti-diagonal axis (/)
         ]
         
         for dir in directions {
-            var count = 1 // Count the stone just placed
+            // We start with 1 (the stone we just placed).
+            var count = 1 
             
-            // Search in positive direction
+            // Look forward in this direction (e.g., look Right)
             count += countConsecutive(row: row, col: col, dr: dir.dr, dc: dir.dc, player: player)
             
-            // Search in negative direction
+            // Look backward in this direction (e.g., look Left)
             count += countConsecutive(row: row, col: col, dr: -dir.dr, dc: -dir.dc, player: player)
             
-            // Freestyle rule: 5 or more in a row wins
+            // If we found 5 or more in a row on this axis, we have a winner!
             if count >= 5 {
                 return true
             }
@@ -135,17 +151,22 @@ class GomokuGame {
         return false
     }
     
+    /// A helper that 'walks' in a specific direction as long as it sees the same color stone.
     private func countConsecutive(row: Int, col: Int, dr: Int, dc: Int, player: Player?) -> Int {
         var count = 0
         var currentRow = row + dr
         var currentCol = col + dc
         
+        // Keep walking as long as we are inside the board.
         while currentRow >= 0 && currentRow < boardSize && currentCol >= 0 && currentCol < boardSize {
+            // If the stone at this spot matches our player, increment count.
             if board[currentRow][currentCol] == player {
                 count += 1
+                // Move to the next spot in the same direction.
                 currentRow += dr
                 currentCol += dc
             } else {
+                // If we see an empty spot or an opponent's stone, stop walking.
                 break
             }
         }
@@ -153,6 +174,7 @@ class GomokuGame {
         return count
     }
     
+    /// Simple check to see if there are any empty (nil) spots left.
     private func isBoardFull() -> Bool {
         for row in board {
             for cell in row {
