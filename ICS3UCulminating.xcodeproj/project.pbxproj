@@ -14,6 +14,7 @@
 		20BB4D732FD1A58000649A50 /* GomokuViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20BB4D722FD1A58000649A50 /* GomokuViewModel.swift */; };
 		20BB4D672FD1A58000649A50 /* HousesListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20BB4D662FD1A58000649A50 /* HousesListView.swift */; };
 		20BB4D692FD1A58000649A50 /* HouseItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20BB4D682FD1A58000649A50 /* HouseItemView.swift */; };
+		20BB4D752FD1A58000649A50 /* GomokuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20BB4D742FD1A58000649A50 /* GomokuView.swift */; };
 		20BB4D712FD1A58000649A50 /* GomokuGame.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20BB4D702FD1A58000649A50 /* GomokuGame.swift */; };
 		20BB4D6B2FD1A58000649A50 /* RELEASE.md in Resources */ = {isa = PBXBuildFile; fileRef = 20BB4D6A2FD1A58000649A50 /* RELEASE.md */; };
 /* End PBXBuildFile section */
@@ -27,6 +28,7 @@
 		20BB4D722FD1A58000649A50 /* GomokuViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GomokuViewModel.swift; sourceTree = "<group>"; };
 		20BB4D662FD1A58000649A50 /* HousesListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HousesListView.swift; sourceTree = "<group>"; };
 		20BB4D682FD1A58000649A50 /* HouseItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HouseItemView.swift; sourceTree = "<group>"; };
+		20BB4D742FD1A58000649A50 /* GomokuView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GomokuView.swift; sourceTree = "<group>"; };
 		20BB4D702FD1A58000649A50 /* GomokuGame.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GomokuGame.swift; sourceTree = "<group>"; };
 		20BB4D6A2FD1A58000649A50 /* RELEASE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = RELEASE.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -94,6 +96,7 @@
 			children = (
 				20BB4D662FD1A58000649A50 /* HousesListView.swift */,
 				20BB4D682FD1A58000649A50 /* HouseItemView.swift */,
+				20BB4D742FD1A58000649A50 /* GomokuView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -178,6 +181,7 @@
 				20BB4D5C2FD1A58000649A50 /* ICS3UCulminatingApp.swift in Sources */,
 				20BB4D712FD1A58000649A50 /* GomokuGame.swift in Sources */,
 				20BB4D732FD1A58000649A50 /* GomokuViewModel.swift in Sources */,
+				20BB4D752FD1A58000649A50 /* GomokuView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
