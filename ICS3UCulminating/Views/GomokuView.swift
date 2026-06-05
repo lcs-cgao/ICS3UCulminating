@@ -44,16 +44,30 @@ struct GomokuView: View {
             .padding(10)
             
             // --- Footer Section ---
-            Button(action: {
-                viewModel.startNewGame()
-            }) {
-                Text("Start New Game")
-                    .fontWeight(.semibold)
-                    .padding()
-                    .frame(maxWidth: .infinity)
-                    .background(Color.blue)
-                    .foregroundColor(.white)
-                    .cornerRadius(10)
+            HStack(spacing: 20) {
+                Button(action: {
+                    viewModel.startNewGame()
+                }) {
+                    Text("Reset Game")
+                        .fontWeight(.semibold)
+                        .padding()
+                        .frame(maxWidth: .infinity)
+                        .background(Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                }
+                
+                Button(action: {
+                    viewModel.toggleAIMode()
+                }) {
+                    Text(viewModel.isVsAI ? "PVP Mode" : "VS AI")
+                        .fontWeight(.semibold)
+                        .padding()
+                        .frame(maxWidth: .infinity)
+                        .background(viewModel.isVsAI ? Color.purple : Color.orange)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                }
             }
             .padding(.horizontal)
             

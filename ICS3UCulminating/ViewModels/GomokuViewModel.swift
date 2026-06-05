@@ -36,6 +36,11 @@ class GomokuViewModel {
         }
     }
     
+    /// Returns true if the game is in VS AI mode.
+    var isVsAI: Bool {
+        return game.isVsAI
+    }
+    
     /// A human-readable message showing the game status.
     /// Examples: "Black's Turn", "White Wins!", "It's a Draw!"
     var statusMessage: String {
@@ -44,6 +49,9 @@ class GomokuViewModel {
         switch state {
         case .playing:
             let name = game.currentPlayer.rawValue
+            if isVsAI && game.currentPlayer == .white {
+                return "AI is thinking..."
+            }
             return "\(name)'s Turn"
             
         case .won(let winner):
@@ -84,7 +92,21 @@ class GomokuViewModel {
     func placeStone(atRow row: Int, andColumn col: Int) {
         // We ask the Model to try and place the stone.
         // The Model handles all the rules (is it empty? is the game over?).
-        _ = game.placeStone(row: row, col: col)
+        let success = game.placeStone(row: row, col: col)
+        
+        // If it's the AI's turn and the move was successful, trigger the AI move
+        if success && isVsAI && game.gameState == .playing && game.currentPlayer == .white {
+            // Small delay to make it feel more natural
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                self.game.makeAIMove()
+            }
+        }
+    }
+    
+    /// Toggles the VS AI mode and resets the game.
+    func toggleAIMode() {
+        game.isVsAI = !game.isVsAI
+        game.resetGame()
     }
     
     /// Resets the entire game back to the starting state (Empty 15x15 board, Black starts).
@@ -92,4 +114,5 @@ class GomokuViewModel {
         game.resetGame()
     }
 }
+
 

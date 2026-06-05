@@ -44,6 +44,9 @@ class GomokuGame {
     /// Stores the last move made, which helps in efficient win checking.
     var lastMove: (row: Int, col: Int)?
     
+    /// If true, the game is played against the computer (AI).
+    var isVsAI: Bool = false
+    
     // MARK: - Initializer
     
     init() {
@@ -98,6 +101,48 @@ class GomokuGame {
         }
         
         return true
+    }
+    
+    /// Makes a move for the AI.
+    /// The AI currently uses a simple strategy: find an empty spot near existing stones.
+    func makeAIMove() {
+        if gameState != .playing || currentPlayer != .white {
+            return
+        }
+        
+        // --- AI STRATEGY ---
+        // 1. Try to find a winning move (not implemented for brevity, but could be added)
+        // 2. Try to block opponent's winning move (not implemented for brevity, but could be added)
+        // 3. Just pick a smart-looking spot (near the last move)
+        
+        if let last = lastMove {
+            // Look in a 3x3 area around the last move
+            for r in (last.row - 1)...(last.row + 1) {
+                for c in (last.col - 1)...(last.col + 1) {
+                    if r >= 0 && r < boardSize && c >= 0 && c < boardSize {
+                        if board[r][c] == nil {
+                            _ = placeStone(row: r, col: c)
+                            return
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Fallback: Pick the first available empty spot starting from the center
+        let center = boardSize / 2
+        for distance in 0..<boardSize {
+            for r in (center - distance)...(center + distance) {
+                for c in (center - distance)...(center + distance) {
+                    if r >= 0 && r < boardSize && c >= 0 && c < boardSize {
+                        if board[r][c] == nil {
+                            _ = placeStone(row: r, col: c)
+                            return
+                        }
+                    }
+                }
+            }
+        }
     }
     
     /// Resets everything to start a brand new game.
