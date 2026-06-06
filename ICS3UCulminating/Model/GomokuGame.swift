@@ -22,101 +22,166 @@ enum GameState: Equatable {
     case draw
 }
 
+/// Represents a single game that was completed.
+struct GameRecord: Identifiable {
+    let id = UUID()
+    let winner: Player? // nil means draw
+    let mode: String    // "VS AI" or "PVP"
+    let moveCount: Int
+    let date = Date()
+}
+
 @Observable
 class GomokuGame {
     
     // MARK: - Stored properties
     
-    /// The size of the grid (15x15). Using a smaller board makes games faster.
+    /// The size of the grid (15x15).
     let boardSize: Int = 15
     
     /// The 2D array representing the board. 
-    /// 'nil' means the intersection is empty.
-    /// 'Player' means a stone is placed there.
     var board: [[Player?]]
     
-    /// Tracks whose turn it is. Black always starts in Gomoku.
+    /// Tracks whose turn it is.
     var currentPlayer: Player = .black
     
-    /// Tracks the current state of the game (playing, won, or draw).
+    /// Tracks the current state of the game.
     var gameState: GameState = .playing
     
-    /// Stores the last move made, which helps in efficient win checking.
-    var lastMove: (row: Int, col: Int)?
+    /// A list of moves in order. This allows us to show move numbers (1, 2, 3...).
+    var moveHistory: [(row: Int, col: Int)] = []
+    
+    /// A list of completed games saved during this session.
+    var gameSessionHistory: [GameRecord] = []
     
     /// If true, the game is played against the computer (AI).
     var isVsAI: Bool = false
     
+    /// The color the human player is playing.
+    var userPlayerColor: Player = .black
+    
+    /// If true, the players are currently "guessing" which stone is which color.
+    var isSideSelectionActive: Bool = true
+    
+    /// The actual colors hidden behind the two "mystery" stones.
+    private var hiddenSides: [Player] = [.black, .white]
+    
     // MARK: - Initializer
     
     init() {
-        // We create the board by nested loops.
-        // This is like drawing 15 rows, and in each row, drawing 15 empty spots.
         var initialBoard: [[Player?]] = []
         for _ in 0..<boardSize {
             var row: [Player?] = []
             for _ in 0..<boardSize {
-                row.append(nil) // Start with all spots empty
+                row.append(nil)
             }
             initialBoard.append(row)
         }
         self.board = initialBoard
+        prepareForSideSelection()
     }
     
     // MARK: - Functions
     
+    /// Returns the move number for a specific cell (returns 0 if empty).
+    func getMoveNumber(row: Int, col: Int) -> Int {
+        for (index, move) in moveHistory.enumerated() {
+            if move.row == row && move.col == col {
+                return index + 1
+            }
+        }
+        return 0
+    }
+    
+    /// Prepares the game for the "Guessing Phase".
+    func prepareForSideSelection() {
+        isSideSelectionActive = true
+        hiddenSides = [.black, .white].shuffled()
+    }
+    
+    /// Called when a user "guesses" a stone.
+    func selectSide(at index: Int) {
+        if index < 0 || index >= hiddenSides.count {
+            return
+        }
+        userPlayerColor = hiddenSides[index]
+        isSideSelectionActive = false
+        resetBoard()
+    }
+    
+    /// Just clears the board without changing sides.
+    private func resetBoard() {
+        var newBoard: [[Player?]] = []
+        for _ in 0..<boardSize {
+            var row: [Player?] = []
+            for _ in 0..<boardSize {
+                row.append(nil)
+            }
+            newBoard.append(row)
+        }
+        self.board = newBoard
+        self.currentPlayer = .black
+        self.gameState = .playing
+        self.moveHistory = []
+    }
+    
+    /// Resets everything and starts the side selection phase again.
+    func resetGame() {
+        prepareForSideSelection()
+    }
+    
     /// The main logic for making a move.
-    /// It validates the move, updates the board, and checks if someone won.
     func placeStone(row: Int, col: Int) -> Bool {
-        // Safety Check 1: Don't allow moves if the game is already over.
-        if gameState != .playing {
+        if gameState != .playing || isSideSelectionActive {
             return false
         }
         
-        // Safety Check 2: Ensure the click was actually inside the 15x15 grid.
         if row < 0 || row >= boardSize || col < 0 || col >= boardSize {
             return false
         }
         
-        // Safety Check 3: Only allow placing a stone on an empty (nil) spot.
         if board[row][col] != nil {
             return false
         }
         
         // --- ACTION PHASE ---
-        // Place the current player's stone on the board.
         board[row][col] = currentPlayer
-        lastMove = (row, col)
+        moveHistory.append((row, col))
         
         // --- CHECK PHASE ---
-        // After placing a stone, we check if this move won the game.
         if checkWin(at: row, col: col) {
             gameState = .won(currentPlayer)
+            saveGameToHistory(winner: currentPlayer)
         } else if isBoardFull() {
-            // If no one won but the board is full, it's a draw.
             gameState = .draw
+            saveGameToHistory(winner: nil)
         } else {
-            // If the game continues, swap to the other player.
             currentPlayer = currentPlayer.opponent()
         }
         
         return true
     }
     
+    /// Saves the current game result to the session history.
+    private func saveGameToHistory(winner: Player?) {
+        let record = GameRecord(
+            winner: winner,
+            mode: isVsAI ? "VS AI" : "PVP",
+            moveCount: moveHistory.count
+        )
+        gameSessionHistory.insert(record, at: 0) // Add to the top of the list
+    }
+    
     /// Makes a move for the AI.
-    /// The AI currently uses a simple strategy: find an empty spot near existing stones.
     func makeAIMove() {
-        if gameState != .playing || currentPlayer != .white {
+        let aiColor = userPlayerColor.opponent()
+        
+        if gameState != .playing || currentPlayer != aiColor || isSideSelectionActive {
             return
         }
         
         // --- AI STRATEGY ---
-        // 1. Try to find a winning move (not implemented for brevity, but could be added)
-        // 2. Try to block opponent's winning move (not implemented for brevity, but could be added)
-        // 3. Just pick a smart-looking spot (near the last move)
-        
-        if let last = lastMove {
-            // Look in a 3x3 area around the last move
+        if let last = moveHistory.last {
             for r in (last.row - 1)...(last.row + 1) {
                 for c in (last.col - 1)...(last.col + 1) {
                     if r >= 0 && r < boardSize && c >= 0 && c < boardSize {
@@ -129,9 +194,13 @@ class GomokuGame {
             }
         }
         
-        // Fallback: Pick the first available empty spot starting from the center
         let center = boardSize / 2
-        for distance in 0..<boardSize {
+        if board[center][center] == nil {
+            _ = placeStone(row: center, col: center)
+            return
+        }
+        
+        for distance in 1..<boardSize {
             for r in (center - distance)...(center + distance) {
                 for c in (center - distance)...(center + distance) {
                     if r >= 0 && r < boardSize && c >= 0 && c < boardSize {
@@ -145,81 +214,39 @@ class GomokuGame {
         }
     }
     
-    /// Resets everything to start a brand new game.
-    func resetGame() {
-        var newBoard: [[Player?]] = []
-        for _ in 0..<boardSize {
-            var row: [Player?] = []
-            for _ in 0..<boardSize {
-                row.append(nil)
-            }
-            newBoard.append(row)
-        }
-        self.board = newBoard
-        self.currentPlayer = .black
-        self.gameState = .playing
-        self.lastMove = nil
-    }
+    // MARK: - Private Logic
     
-    // MARK: - Private Logic (The "Brain" of the game)
-    
-    /// This function checks 4 axes around the stone just placed:
-    /// Horizontal, Vertical, and the two Diagonals.
     private func checkWin(at row: Int, col: Int) -> Bool {
         let player = board[row][col]
-        
-        // These numbers represent the 'steps' we take to move in a direction.
-        // e.g., (0, 1) means stay in the same row, move 1 column right.
-        let directions: [(dr: Int, dc: Int)] = [
-            (0, 1),  // Horizontal axis
-            (1, 0),  // Vertical axis
-            (1, 1),  // Diagonal axis (\)
-            (1, -1)  // Anti-diagonal axis (/)
-        ]
+        let directions: [(dr: Int, dc: Int)] = [(0, 1), (1, 0), (1, 1), (1, -1)]
         
         for dir in directions {
-            // We start with 1 (the stone we just placed).
             var count = 1 
-            
-            // Look forward in this direction (e.g., look Right)
             count += countConsecutive(row: row, col: col, dr: dir.dr, dc: dir.dc, player: player)
-            
-            // Look backward in this direction (e.g., look Left)
             count += countConsecutive(row: row, col: col, dr: -dir.dr, dc: -dir.dc, player: player)
-            
-            // If we found 5 or more in a row on this axis, we have a winner!
             if count >= 5 {
                 return true
             }
         }
-        
         return false
     }
     
-    /// A helper that 'walks' in a specific direction as long as it sees the same color stone.
     private func countConsecutive(row: Int, col: Int, dr: Int, dc: Int, player: Player?) -> Int {
         var count = 0
         var currentRow = row + dr
         var currentCol = col + dc
-        
-        // Keep walking as long as we are inside the board.
         while currentRow >= 0 && currentRow < boardSize && currentCol >= 0 && currentCol < boardSize {
-            // If the stone at this spot matches our player, increment count.
             if board[currentRow][currentCol] == player {
                 count += 1
-                // Move to the next spot in the same direction.
                 currentRow += dr
                 currentCol += dc
             } else {
-                // If we see an empty spot or an opponent's stone, stop walking.
                 break
             }
         }
-        
         return count
     }
     
-    /// Simple check to see if there are any empty (nil) spots left.
     private func isBoardFull() -> Bool {
         for row in board {
             for cell in row {
