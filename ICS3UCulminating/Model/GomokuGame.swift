@@ -1,36 +1,6 @@
 import Foundation
 import Observation
 
-// MARK: - Enums
-
-enum Player: String {
-    case black = "Black"
-    case white = "White"
-    
-    func opponent() -> Player {
-        if self == .black {
-            return .white
-        } else {
-            return .black
-        }
-    }
-}
-
-enum GameState: Equatable {
-    case playing
-    case won(Player)
-    case draw
-}
-
-/// Represents a single game that was completed.
-struct GameRecord: Identifiable {
-    let id = UUID()
-    let winner: Player? // nil means draw
-    let mode: String    // "VS AI" or "PVP"
-    let moveCount: Int
-    let date = Date()
-}
-
 @Observable
 class GomokuGame {
     
